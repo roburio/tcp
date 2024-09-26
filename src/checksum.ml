@@ -24,6 +24,8 @@ external unsafe_get_uint16 : bigstring -> int -> int = "%caml_bigstring_get16u"
 external swap16 : int -> int = "%bswap16"
 external swap32 : int32 -> int32 = "%bswap_int32"
 
+external digest_32_le : bigstring -> int -> int  = "digest_32_le" [@@noalloc]
+
 let unsafe_digest_16_le ?(off = 0) ~len:top buf =
   let buf16 = to_int16 ~off ~len:top buf in
   let len = ref top in
@@ -41,24 +43,8 @@ let unsafe_digest_16_le ?(off = 0) ~len:top buf =
   swap16 (lnot !sum land 0xffff)
 
 let unsafe_digest_32_le ?(off = 0) ~len:top buf =
-  let buf32 = to_int32 ~off ~len:top buf in
-  let len = ref top in
-  let sum = ref 0 in
-  let i = ref 0 in
-  while !len >= 4 do
-    let[@warning "-8"] (Some v) = Int32.unsigned_to_int buf32.{!i} in
-    sum := !sum + v;
-    incr i;
-    len := !len - 4
-  done;
-  if !len >= 2 then (
-    sum := !sum + unsafe_get_uint16 buf (off + (!i * 4));
-    len := !len - 2);
-  if !len = 1 then sum := !sum + unsafe_get_uint8 buf (off + top - 1);
-  while !sum lsr 16 <> 0 do
-    sum := (!sum land 0xffff) + (!sum lsr 16)
-  done;
-  swap16 (lnot !sum land 0xffff)
+  let buf = Bigarray.Array1.sub buf off top in
+  swap16 (digest_32_le buf top)
 
 let unsafe_digest_32_be ?(off = 0) ~len:top buf =
   let buf32 = to_int32 ~off ~len:top buf in

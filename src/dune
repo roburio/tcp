@@ -2,4 +2,11 @@
  (name utcp)
  (public_name utcp)
  (libraries cstruct fmt ipaddr ipaddr-cstruct logs randomconv duration mtime metrics base64)
+ (foreign_stubs
+  (language c)
+  (names digest)
+  (flags
+   (:standard)))
  (instrumentation (backend bisect_ppx)))
+
+(include_subdirs unqualified)
